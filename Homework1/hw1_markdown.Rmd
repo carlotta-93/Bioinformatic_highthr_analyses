@@ -37,13 +37,13 @@ head(gene_lengths, n=3)
 ```{r, echo=TRUE}
 par(mfrow=c(1,3))
 # Exon length histogram
-hist(gene_lengths$mrna_length, col="red",xlim=c(0,1000000), ylim=c(0,10000), breaks=100, 
+hist(gene_lengths$mrna_length, col="red", breaks=100, xlim=c(0,max(gene_lengths$intron_length)),
      main="Histogram of exon length", ylab="Frequency", 
-     xlab="Length of exon", border="red")
+     xlab="Length of exon")
 
 # Intron_length histogram: 
-hist(gene_lengths$intron_length,col="blue",xlim=c(0,1000000), ylim=c(0,10000),
-     breaks=100, main="Histogram of intron length", ylab="Frequency", 
+hist(gene_lengths$intron_length,col="blue",
+     breaks=100, xlim=c(0,max(gene_lengths$intron_length)), main="Histogram of intron length", ylab="Frequency", 
 xlab="Length of intron")
 
 # Boxplot for exon and intron length:
@@ -53,7 +53,7 @@ and intron length", ylab="Length", outline = F, yaxt="n")
 axis(side=2, at=seq(0,120000,10000), labels=T)
 ```
 
-It is clear by looking at both the histograms and the box plot that the intron length is longer than the exon. Also, there is greater variability in intron length when compared to exon.  
+It is clear by looking at both the histograms and the box plot that the intron length is longer than the exon length. Also, there is greater variability in intron length when compared to exon.  
 
 ## Question 4: Are the mRNA lengths significantly longer than the total intron lengths, or is it the other way around?  
 In order to choose the appropriate statistical test we used the qqnorm function in R to determine if our data satisfied the assumption of normality. Neither the intron and exon lengths follow a normal distribution so we used the non-parametric Wilcoxon test.  
@@ -68,12 +68,12 @@ qqnorm(gene_lengths$intron_length,ylab="Intron length (basepair)",
        main="QQ-plot of Intron length")
 qqline(gene_lengths$intron_length)
 ```
-The Wilcoxon test does not look at the difference in medians but uses the difference in ranked U-statistics. Measuring U-statistics is advantageous because it takes all values into consideration not just the median.
+The Wilcoxon test does not look at the difference in medians but uses the difference in ranked U-statistics. Measuring U-statistics is advantageous because it takes all values into consideration not just the median. We are using a non-paired test because we can't assume that the data is paired. 
 Our hypotheses for the Wilcoxon test are as follows:   
 H0 = The U-statistic between the length of mRNAs and introns is the same   
 HA = The U-statistic between the length of mRNAs and introns is not the same   
 ```{r, echo=TRUE}
-wilcox.test(gene_lengths$mrna_length,gene_lengths$intron_length,paired=T)
+wilcox.test(gene_lengths$mrna_length, gene_lengths$intron_length, paired=F)
 ```
 Our p-value < 2.2e-16, which is below our significance threshold of 0.05, therefore we can reject the null hypothesis that there is no difference between the mRNA and intron length. In summary, the results from the Wilcoxon test suggests that the intron lengths are significantly different from the exon lengths, which is concurrent with our observations in question 3.
 
@@ -93,35 +93,33 @@ plot(gene_lengths$exon_count, gene_lengths$mrna_length, col="dark green",
      main = "Exon count vs Exon length",
      xlab = "Exon count", ylab = "Exon length (bp)")
      legend("topright", "R=0.6390378", bty="n")
-     abline(lm_exons, col="black")
 
 lm_intron_length<-lm(gene_lengths$mrna_length~gene_lengths$intron_length)
 plot(gene_lengths$intron_length, gene_lengths$mrna_length, col=" dark blue",
      main = "Intron length vs Exon length",
      xlab = "Intron length (bp)", ylab = "Exon length (bp)")
      legend("topright", "R=0.3473037", bty="n")
-     abline(lm_intron_length, col="black")
 ```
   
 
-## Question 6: What gene has the longest (total) exon length? How long is this mRNA and how many exons does it have?  Do this in a single line of R (without using “;”)
+## Question 6: What gene has the longest (total) exon length? How long is this mRNA and how many exons does it have?  Do this in a single line of R (without using ???;???)
 ```{r, echo=TRUE}
 gene_lengths[which.max(gene_lengths$mrna_length),c(1,2,4)]
 ```
 This gene is identified as 8385 MUC16 is 43815bp long with 84 exons.
 
-## Question 7: In genomics, we often want to fish out extreme examples – like all very short genes, or all very long genes. It is often helpful to make a function to do these tasks – it saves time in the long run.
+## Question 7: In genomics, we often want to fish out extreme examples ??? like all very short genes, or all very long genes. It is often helpful to make a function to do these tasks ??? it saves time in the long run.
 ```{r, echo=TRUE}
 longest_mrna_l<-max(gene_lengths$mrna_length)
 mrna_l <- gene_lengths$mrna_length
-count_genes <- function(vector_l, x1, x2){
+count_genes <- function(vector_l, x1=0, x2=longest_mrna_l){
   count <- sum(vector_l > x1 & vector_l <= x2)
   total_mrna_count <- length(vector_l)
   return(count/total_mrna_count)
 }
 # Test the function with:
-count_genes(mrna_l, x1=0, x2=longest_mrna_l)
-count_genes(mrna_l, x1=10000, x2=longest_mrna_l)
+count_genes(mrna_l)
+count_genes(mrna_l, x1=10000)
 count_genes(mrna_l, x1=1000, x2=10000)
 count_genes(mrna_l, x1=100, x2=1000)
 count_genes(mrna_l, x1=0, x2=100)
