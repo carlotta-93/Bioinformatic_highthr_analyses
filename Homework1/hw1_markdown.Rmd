@@ -57,7 +57,7 @@ and intron length without outliers", ylab="Length", outline = F, yaxt="n")
 axis(side=2, at=seq(0,120000,10000), labels=T)
 ```
 
-It is clear by looking at both the histograms and the box plot that the intron length is longer than the exon length. Also, there is greater variability in intron length when compared to exon. The boxplots show the intron and exon lenght with and without outliers. The first boxplot shows a valuable presence of outlier in the introns and a minor amount in the exons. The second version has been made to allow a better view of the results.
+It is clear by looking at both the histograms and the box plot that the intron length is longer than the exon length. Also, there is greater variability in intron length when compared to exon. The boxplots show the intron and exon lenght with and without outliers. The first boxplot shows a valuable presence of outlier in the introns and a minor amount in the exons. The second version has been made to allow a better view of the results setting the outline to False. 
 
 ## Question 4: Are the mRNA lengths significantly longer than the total intron lengths, or is it the other way around?  
 In order to choose the appropriate statistical test we used the qqnorm function in R to determine if our data satisfied the assumption of normality. Neither the intron and exon lengths follow a normal distribution so we used the non-parametric Wilcoxon test.  
@@ -115,7 +115,7 @@ This gene is identified as 8385 MUC16 is 43815bp long with 84 exons.
 ## Question 7: In genomics, we often want to fish out extreme examples ??? like all very short genes, or all very long genes. It is often helpful to make a function to do these tasks ??? it saves time in the long run.
 ```{r, echo=TRUE}
 
-count_genes <- function(vector_l, x1=0, x2=max(gene_lengths$mrna_length)){
+count_genes <- function(vector_l, x1=0, x2=max(vector_l)){
   count <- sum(vector_l > x1 & vector_l <= x2)
   total_mrna_count <- length(vector_l)
   return(count/total_mrna_count)
