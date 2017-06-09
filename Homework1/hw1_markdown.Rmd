@@ -36,14 +36,15 @@ head(gene_lengths, n=3)
 ## Question 3: Make histograms and boxplots showing the distribution of total exon and total intron lengths. Are exons larger than introns or vice versa?  
 ```{r, echo=TRUE}
 par(mfrow=c(2,2))
+seq_break_points = seq(0, max(gene_lengths$intron_length), l=100)
 # Exon length histogram
-hist(gene_lengths$mrna_length, col="red", breaks=100, 
+hist(gene_lengths$mrna_length, col="red", breaks=seq_break_points, 
      xlim=c(0,max(gene_lengths$intron_length)), main="Histogram of exon length", 
      ylab="Frequency", xlab="Length of exon")
 
 # Intron_length histogram: 
 hist(gene_lengths$intron_length,col="blue",
-     breaks=100, xlim=c(0,max(gene_lengths$intron_length)), 
+     breaks= seq_break_points, xlim=c(0,max(gene_lengths$intron_length)), 
      main="Histogram of intron length", ylab="Frequency", xlab="Length of intron")
 
 # Boxplot for exon and intron length:

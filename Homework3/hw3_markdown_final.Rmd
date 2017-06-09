@@ -16,7 +16,7 @@ When taking these data into consideration, it is not possible for us to conclude
 What we can do is to compare the signal for the same gene under two different conditions, i.e. on two different plates, because the probes are the same. However, there are many non-biological factors that can explain a difference in signal between two microarrays, e.g. the quality of the RNA. Such factors should affect all signals on the plate equally, and it is therefore possible to normalize for them. Meaning, imcluding genes that is known not to change their expression pattern in the different conditions in order to identify genes with altered expression profiles. 
 So what is important to note about microarray analysis is that it reveals only relative (not quantitative) changes in gene expression. Lastly it should be mentioned that several replicates are required to draw any conclusions. 
 
-### Question 2: Do a suitable statistical test for each row to find the differentially expressed genes (show the R code only ??? we will use the result in the next few questions)
+### Question 2: Do a suitable statistical test for each row to find the differentially expressed genes (show the R code only we will use the result in the next few questions)
 
 ```{r, echo=TRUE}
 rm(list=ls())
@@ -69,7 +69,6 @@ mean_con <- sapply(1:nrow(hiv), function(x) mean(as.numeric(hiv[x,6:10])))
 foldchange_hiv <- log2(mean_hiv)-log2(mean_con)
 fc_log2_values <- foldchange_hiv[p_val_FDR<0.2]
 (2^fc_log2_values)*100
-
 ```
 
 The log2-foldchange values are calculated in order to define the change in gene expression. Based on the definition of fold change (fold change = log2(mean(HIV)) - log2(mean(control)), a negative log2-score represents a reduced expression of a gene, values of log2 equals to 0 mean no change in expression for the different conditions and finally, a positive score indicates an upregulation. Thus, since all the 12 genes obtain a positive log2-score we conclude they're all upregulated in HIV. The fold change is shown above. The 12 genes exhibit an upregulation ranging from approximately 2.5% to 52%, meaning the change in expression isn't that extraordinary when comparing the two conditions. 
@@ -150,8 +149,10 @@ The number of rows of the merged file is 98 and the number of columns is 7.
 ### Question 5: Calculate the Isoform Fraction values (IF values) and the corresponding dIF values?
 
 ```{r, echo=TRUE}
-temp1 <- tapply(transcript_diff_exp_subset$value_1, transcript_diff_exp_subset$gene_id, sum)
-temp2 <- tapply(transcript_diff_exp_subset$value_2, transcript_diff_exp_subset$gene_id, sum)
+temp1 <- tapply(transcript_diff_exp_subset$value_1, transcript_diff_exp_subset$gene_id, 
+                sum)
+temp2 <- tapply(transcript_diff_exp_subset$value_2, transcript_diff_exp_subset$gene_id, 
+                sum)
 for (i in transcript_diff_exp_subset$gene_id){
   transcript_diff_exp_subset$geneValue1[which(
     transcript_diff_exp_subset$gene_id == i)] <- temp1[i]
@@ -162,11 +163,12 @@ transcript_diff_exp_subset$IF1 <- transcript_diff_exp_subset$value_1 /
   transcript_diff_exp_subset$geneValue1
 transcript_diff_exp_subset$IF2 <- transcript_diff_exp_subset$value_2 / 
   transcript_diff_exp_subset$geneValue2
-transcript_diff_exp_subset$DIF <- transcript_diff_exp_subset$IF1 - 
-  transcript_diff_exp_subset$IF2
+transcript_diff_exp_subset$DIF <- transcript_diff_exp_subset$IF2 -
+  transcript_diff_exp_subset$IF1  
 ```
 
-The isoform fraction (IF) describes the contribution of a single transcript to the expression of its parent gene. We obtained several values corresponding to NAs. NA indicates that either one or both of the isoform fractions is missing, therefore we can't calculate the change in isoform expression (dIF). On this basis we cannot conclude that an isoform switch has occurred, but rather the gene expression could be turned off. It would be inappropriate to equate all NAs to 0 because this doesn't necessarily mean that there is no expression, so removing these isoforms completely is a more conservative alternative.
+The isoform fraction (IF) describes the contribution of a single transcript to the expression of its parent gene. We obtained several values corresponding to NAs in our analysis. This happens when the gene expression value of a gene equals to zero, and hence resulting in dividing with zero which isn't mathematical defined. We choose to remove the NAs produced in these cases since a vaid comparison of the fractions of isoforms in the two different conditions cannot be made accordingly. 
+
 
 ### Quesiton 6: What is the average (mean) and median dIF value? Compare the two values and discuss what it enables you to say about the distribution of dIF values.
 
@@ -175,8 +177,8 @@ mean(transcript_diff_exp_subset$DIF, na.rm = T)
 median(transcript_diff_exp_subset$DIF, na.rm = T)
 ```
 
-As in this case, where the mean and median is almost similar and both almost equal to zero, indicates that the majority of the genes in the data frame do not change in level of expression and hence a similar pool of genes are up and down-regulated. Illustrating the data in a histogram (not shown) shows a tendency to be normally distributed. 
-
+Illustrating the data in a histogram (not shown) shows a tendency to be normally distributed. As seen by the calculations, the mean and median are almost similar and both approximately equal to zero. However, the median is slightly smaller than the mean, indicating all genes don't have the same number of isoforms. As regards the mean, the definition of dIF being the subtraction of each isoform fraction matches with the mean being aprroximately equal to zero. We would expect this since a mean=0 is equivalent with adding up all dIF values from the same gene. 
+ 
 ### Question 7: Use R to subset the merged data.frame to only contain genes with potential isoform switching by identifying genes with dIF > +/- 0.25. Add the p_value from the 'Splicing differential expression testing' to the data.frame
 
 ```{r, echo=TRUE}
@@ -192,10 +194,11 @@ final_data_frame["p_value"] <- splicing_diff_exp$p_value[matching_on_gene_ids]
 ### Question 8: Report the switch in the gene with the lowest p_value 
 
 ```{r, echo=TRUE}
-gene_lowest_p_value <- final_data_frame[which.min(final_data_frame$p_value),]
+gene_lowest_p_value <- final_data_frame[
+  which(final_data_frame$p_value == min(final_data_frame$p_value)),]
 gene_lowest_p_value[c('transcript_id', 'gene','DIF', 'p_value')]
 ```
-The switch with the lowest p_value is on trasncript TCONS_00000021 on the gene uc001aeo.3 with p-value equals to 0.00075.
+Thus, the switch with the lowest p_value is gene uc001aeo.3 with two isoforms TCONS_00000021 and TCONS_00000022
 
 ### Question 9: Analyzing the gene with a switch
 

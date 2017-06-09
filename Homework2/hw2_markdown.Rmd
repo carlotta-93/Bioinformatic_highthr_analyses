@@ -58,6 +58,7 @@ head(ERb_coverage, n=3)
 ```
 
 #### Plot the fractions for all chromosomes as a single barplot in R.
+
 The plot shows the percentage of genome coverage for ERa and ERb sites. 
 The genome rows have been deleted from the genomecoverage_ERa.bed and genomecoverage_ERb.bed files because this data is not relevant in this analysis.
 
@@ -78,18 +79,17 @@ new_coverage_ERb_sorted <- new_coverage_ERb[order(new_coverage_ERb$V1),]
 chromosome_number_a <- new_coverage_ERa_sorted$V1[new_coverage_ERa_sorted$V2==1] # labels
 chromosome_number_b <- new_coverage_ERb_sorted$V1[new_coverage_ERb_sorted$V2==1] #labels
 
-barplot(new_coverage_ERa_sorted$V5[new_coverage_ERa_sorted$V2==1]*100, 
-         col='red', density = NULL, las=3, names.arg = chromosome_number_a)
-barplot(new_coverage_ERb_sorted$V5[new_coverage_ERb_sorted$V2==1]*100, 
-        col='blue', add = T, density = 20, ylab='percentage of coverage %', 
-        xlab = 'chromosomes number')
-title(main='Genome coverage for ERa and ERb sites with one or more overlaps')
-legend('topright', fill=c('red', 'blue'), legend=c('ERa','ERb'),
-       density=c(NA,30))
+data <- rbind(new_coverage_ERa_sorted$V5[new_coverage_ERa_sorted$V2==1]*100,
+              new_coverage_ERb_sorted$V5[new_coverage_ERb_sorted$V2==1]*100)
+rownames(data)<-c("ERa","ERb")
+barplot(data,col=c("red","blue"),beside=T,las=3,names.arg = chromosome_number_a,
+        legend = rownames(data),xlab = 'chromosomes number',
+        ylab='percentage of coverage %',
+        main='Genome coverage for ERa and ERb sites \nwith one or more overlaps')
 ```
 
 The plot shows the percentage of genome coverage of the chromosomes with 1 or more bindingsites.
-ERa and ERb have bindingsites on the same chromosomes, though ERa covers a larger percentage of each chromosome.However, in this experiment ERa and ERb only bind to six of the chromosomes. Estrogen receptors are nuclear receptors that are likely to regulate many genes throughout the genome. It is possible that they in fact bind other chromosomes as well, but we did not see it in this dataset. This could partly be explained by economic considerations. Making ChIP on the whole chromosome is quite costly, and in order to reduce expenses they might only use half the genome for the experiment.
+ERa and ERb have bindingsites on the same chromosomes, though ERa covers a larger percentage of each chromosome.However, in this experiment ERa and ERb only bind to six of the chromosomes. Estrogen receptors are nuclear receptors that are likely to regulate many genes throughout the genome. It is possible that they in fact bind other chromosomes as well, but we did not see it in this dataset. This could partly be explained by economic considerations. As stated in the wikipedia article linked to the question, making ChIP-analysis on the whole chromosome is quite costly, and in order to reduce expenses they might only sequence a minor part of the genome. 
 Based on our data, it is possible that ERa and ERb share bindingsites and thus serve (some of) the same functions. However, both ERA and ERB share structure similarities. Thus, the antibody used for the ChIP assay may have been bound to both proteins giving rise to a skewet interpretation of shared binding sites.
 
 ### B: How many ERa sites do/do not overlap ERb sites, and vice versa?
@@ -119,7 +119,7 @@ The number of ERa sites overlapping ERb sites is 345 and it is the same as the n
 BLAT algorithm has been applied to the mRNA sequence of the fly gene found in mouse genome and that of D. melanogaster (Feb. 2006 assembly/mm8 was chosen to compare these two).
 The fly gene looks completely odd when mapped to the mouse genome, evident by the fact that the gene only consists of one big exon and does not have either 5' or 3' UTRs, which all are normally present. In addition to that, turning on CpG island tracks in UCSC browser shows that there is no region of CpG islands present in the studied gene region - although CpG islands are not required for promoter regions, the absence seems suspicious. 
 Running BLAT on the mouse sequence from the new-gene region and the mouse genome, gives rise to several perfect hits, and many hits with a relative good score - suggesting the sequence is common in the mouse genome. A particular hit spanning 577 base pairs with a 100% identity maps to a gene called Rpl41 on chromosome 10 in the mouse genome. 
-This can be explained by Rpl14 being greatly conserved throughout species, and that this particular sequence at some point has been replicated and inserted randomly in the genome. Thus, the postulated 'new gene' is actually a pseudogene (segment of DNA that is related to a real gene). Since it is highly unlikely that the final processed transcript will be inserted in association with a promoter, it will never be transcribed but it will still resemble the sequence of the original gene due to high conservation (as mentioned earlier).
+This can be explained by Rpl14 being greatly conserved throughout species, and that this particular sequence at some point has been replicated and inserted randomly in the genome. Thus, the postulated 'new gene' is actually  a processed pseudogene - segment of DNA that is related to a real gene, and that is formed through retrotransposition (does not contain any introns). Since it is highly unlikely that the final processed transcript will be inserted in association with a promoter, it will never be transcribed but it will still resemble the sequence of the original gene due to high conservation. 
 
 ![Fly gene shows 81.5% identify and maps to 70 bases in the mouse genome](3a.png)
 
