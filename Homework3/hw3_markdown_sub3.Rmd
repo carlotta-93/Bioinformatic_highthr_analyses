@@ -69,6 +69,7 @@ mean_con <- sapply(1:nrow(hiv), function(x) mean(as.numeric(hiv[x,6:10])))
 foldchange_hiv <- log2(mean_hiv)-log2(mean_con)
 fc_log2_values <- foldchange_hiv[p_val_FDR<0.2]
 (2^fc_log2_values)*100
+
 ```
 
 The log2-foldchange values are calculated in order to define the change in gene expression. Based on the definition of fold change (fold change = log2(mean(HIV)) - log2(mean(control)), a negative log2-score represents a reduced expression of a gene, values of log2 equals to 0 mean no change in expression for the different conditions and finally, a positive score indicates an upregulation. Thus, since all the 12 genes obtain a positive log2-score we conclude they're all upregulated in HIV. The fold change is shown above. The 12 genes exhibit an upregulation ranging from approximately 2.5% to 52%, meaning the change in expression isn't that extraordinary when comparing the two conditions. 
@@ -149,22 +150,15 @@ The number of rows of the merged file is 98 and the number of columns is 7.
 ### Question 5: Calculate the Isoform Fraction values (IF values) and the corresponding dIF values?
 
 ```{r, echo=TRUE}
-temp1 <- tapply(transcript_diff_exp_subset$value_1, transcript_diff_exp_subset$gene_id, 
-                sum)
-temp2 <- tapply(transcript_diff_exp_subset$value_2, transcript_diff_exp_subset$gene_id, 
-                sum)
+temp1<-tapply(transcript_diff_exp_subset$value_1, transcript_diff_exp_subset$gene_id, sum)
+temp2<-tapply(transcript_diff_exp_subset$value_2, transcript_diff_exp_subset$gene_id, sum)
 for (i in transcript_diff_exp_subset$gene_id){
-  transcript_diff_exp_subset$geneValue1[which(
-    transcript_diff_exp_subset$gene_id == i)] <- temp1[i]
-  transcript_diff_exp_subset$geneValue2[which(
-    transcript_diff_exp_subset$gene_id == i)] <- temp2[i]
+  transcript_diff_exp_subset$geneValue1[which(transcript_diff_exp_subset$gene_id == i)] <- temp1[i]
+  transcript_diff_exp_subset$geneValue2[which(transcript_diff_exp_subset$gene_id == i)] <- temp2[i]
 }
-transcript_diff_exp_subset$IF1 <- transcript_diff_exp_subset$value_1 / 
-  transcript_diff_exp_subset$geneValue1
-transcript_diff_exp_subset$IF2 <- transcript_diff_exp_subset$value_2 / 
-  transcript_diff_exp_subset$geneValue2
-transcript_diff_exp_subset$DIF <- transcript_diff_exp_subset$IF2 -
-  transcript_diff_exp_subset$IF1  
+transcript_diff_exp_subset$IF1 <- transcript_diff_exp_subset$value_1 / transcript_diff_exp_subset$geneValue1
+transcript_diff_exp_subset$IF2 <- transcript_diff_exp_subset$value_2 / transcript_diff_exp_subset$geneValue2
+transcript_diff_exp_subset$DIF <- transcript_diff_exp_subset$IF2-transcript_diff_exp_subset$IF1  
 ```
 
 The isoform fraction (IF) describes the contribution of a single transcript to the expression of its parent gene. We obtained several values corresponding to NAs in our analysis. This happens when the gene expression value of a gene equals to zero, and hence resulting in dividing with zero which isn't mathematical defined. We choose to remove the NAs produced in these cases since a vaid comparison of the fractions of isoforms in the two different conditions cannot be made accordingly. 
@@ -177,7 +171,7 @@ mean(transcript_diff_exp_subset$DIF, na.rm = T)
 median(transcript_diff_exp_subset$DIF, na.rm = T)
 ```
 
-Illustrating the data in a histogram (not shown) shows a tendency to be normally distributed. As seen by the calculations, the mean and median are almost similar and both approximately equal to zero. However, the median is slightly smaller than the mean, indicating all genes don't have the same number of isoforms. As regards the mean, the definition of dIF being the subtraction of each isoform fraction matches with the mean being aprroximately equal to zero. We would expect this since a mean=0 is equivalent with adding up all dIF values from the same gene. 
+Illustrating the data in a histogram (not shown) shows a tendency to be normally distributed. As seen by the calculations, the mean and median are almost similar and both approximately equal to zero. Since the values of the mean and the median show a small difference, this means that the distribution of the dIFs is almost evenly divided with a minimal spread of the data points. However, the median is slightly smaller than the mean, indicating all genes don't have the same number of isoforms. As regards the mean, the definition of dIF being the subtraction of each isoform fraction matches with the mean being aprroximately equal to zero. We would expect this since a mean=0 is equivalent with adding up all dIF values from the same gene. 
  
 ### Question 7: Use R to subset the merged data.frame to only contain genes with potential isoform switching by identifying genes with dIF > +/- 0.25. Add the p_value from the 'Splicing differential expression testing' to the data.frame
 
@@ -194,8 +188,7 @@ final_data_frame["p_value"] <- splicing_diff_exp$p_value[matching_on_gene_ids]
 ### Question 8: Report the switch in the gene with the lowest p_value 
 
 ```{r, echo=TRUE}
-gene_lowest_p_value <- final_data_frame[
-  which(final_data_frame$p_value == min(final_data_frame$p_value)),]
+gene_lowest_p_value <-final_data_frame[which(final_data_frame$p_value==min(final_data_frame$p_value)),]
 gene_lowest_p_value[c('transcript_id', 'gene','DIF', 'p_value')]
 ```
 Thus, the switch with the lowest p_value is gene uc001aeo.3 with two isoforms TCONS_00000021 and TCONS_00000022
