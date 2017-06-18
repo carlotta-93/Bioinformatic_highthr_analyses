@@ -107,7 +107,7 @@ plot(gene_lengths$intron_length, gene_lengths$mrna_length, col=" dark blue",
 ```
   
 
-## Question 6: What gene has the longest (total) exon length? How long is this mRNA and how many exons does it have?  Do this in a single line of R (without using ???;???)
+## Question 6: What gene has the longest (total) exon length? How long is this mRNA and how many exons does it have? Do this in a single line of R (without using ';')
 ```{r, echo=TRUE}
 gene_lengths[which.max(gene_lengths$mrna_length),c(1,2,4)]
 ```
