@@ -102,7 +102,8 @@ read_len_R2 <- read.table('input_readslength_R2.txt', header=F) # R2 reads lengt
 r1_mean <- mean(read_len_R1$V1) # average length of R1 reads
 r2_mean <- mean(read_len_R2$V1) # average length of R2 reads
 avg_fragment_length <- 178.486 
-abs(avg_fragment_length - (r1_mean+r2_mean)) # computes the absolute distance between 3' ends
+# computes the absolute distance between 3' ends
+abs(avg_fragment_length - (r1_mean+r2_mean)) 
 ```
 The resulting fragment from the computation is a transcript compatible with the mapped reads, this means that the distance between the two 3' ends of a read pair can be computed as the absolute difference between the average_fragment_length and the average length of the reads in R1 and R2.
 This results in an average distance between the 3' ends of an average read pair of almost 18 bases.
@@ -159,38 +160,79 @@ head(Rpkm_values, 2)
 
 ## Question 3.3: Make a one-liner (without the use of ';') that outputs the mean RPKM value of each sample. The restrictions from the previous question no longer apply.
 ```{r, echo=TRUE, eval=TRUE, warning=FALSE}
-mean_values <- cbind(rowMeans(Rpkm_values[,0:3]), rowMeans(Rpkm_values[,4:6]))
-colnames(mean_values)<- c('K samples means', 'S samples means')
-head(mean_values, 3)
+mean_values <- colMeans(Rpkm_values) # compute of mean values for each sample
+mean_values
 ```
 
-
-## Question 3.4: Make histograms of the distribution of the logRpkm expression values. 
+## Question 3.4: Make histograms of the distribution of the logRpkm expression values.
 ```{r, echo=TRUE, eval=TRUE}
-library("ggplot2")
-trans_log <- data.frame(t(logRpkmDF))
-# trans_log$tool_label <- 
-# 
-# logRpkm_plot <- ggplot(data=logRpkmDF, aes(logRpkmDF[])) + 
-#             geom_histogram(stat="bin", color='black', fill='grey', binwidth = 0.2) +
-#             xlab("log10-transformed filtered RPKM") +
-#             ylab("Frequency") +
-#             ggtitle("Distribution of CHIP peaks in merged regions") +
-#             theme(plot.title = element_text(hjust = 0.5)) 
-#     #         scale_fill_manual(values =
-#     # c("K_WT1_RPKM", 'K_WT2_RPKM', 'K_WT3_RPKM' = "darkblue", "S_WT1_RPKM", 'S_WT1_RPKM', 'S_WT1_RPKM' = "red"))+
-#     #         facet_wrap(~KnockDownTarget)
-# logRpkm_distribution
+library(reshape)
+library(ggplot2)
+logRpkmDF_melt <- melt(logRpkmDF)
+# adding two columns with labels for tool and for replicates
+logRpkmDF_melt$tool_label <- rep(NA, nrow(logRpkmDF_melt)) 
+logRpkmDF_melt$replicate <- rep(NA, nrow(logRpkmDF_melt)) 
+logRpkmDF_melt[grepl("K_", logRpkmDF_melt$variable),][,'tool_label'] <- 'Kallisto'
+logRpkmDF_melt[grepl("S_", logRpkmDF_melt$variable),][,'tool_label'] <- 'Salmon'
+logRpkmDF_melt[grepl("_WT1_", logRpkmDF_melt$variable),][,'replicate'] <- 'WT1'
+logRpkmDF_melt[grepl("_WT2_", logRpkmDF_melt$variable),][,'replicate'] <- 'WT2'
+logRpkmDF_melt[grepl("_WT3_", logRpkmDF_melt$variable),][,'replicate'] <- 'WT3'
 
+logRpkm_plot <- ggplot(data=logRpkmDF_melt, 
+                aes(value, fill=tool_label)) + 
+                geom_histogram(stat="bin", binwidth = 0.2, position=position_dodge()) +
+                xlab("log10-transformed filtered RPKM") +
+                ylab("Frequency") +
+                ggtitle("Distribution of the logRpkm expression values") +
+                theme(plot.title = element_text(hjust = 0.5)) +
+                scale_fill_manual(values = c('Kallisto' = "darkblue", 'Salmon' = "red"))+
+                facet_wrap(~replicate)
+logRpkm_plot
 ```
 
 
-## Question 3.5: For each tool use logRpkm to calculate all pairwise replicate Pearson correlations of the replicate expression values and report the numbers in a table (one table per tool). 
+## Question 3.5: For each tool use logRpkm to calculate all pairwise replicate Pearson correlations of the replicate expression values and report the numbers in a table (one table per tool).
+
+```{r, echo=TRUE, eval=TRUE}
+logrpmk_table_kallisto <- cor(logRpkmDF[,grepl("K_", names(logRpkmDF))], 
+                              method = 'pearson')
+logrpmk_table_kallisto
+logrpmk_table_salmon <- cor(logRpkmDF[,grepl("S_", names(logRpkmDF))], 
+                            method = 'pearson')
+logrpmk_table_salmon
+```
+
 
 ## Question 3.6: 
 ### A)	Construct a function which calculates the CV and use the apply() function to calculate the CV based on logRpkm values for Kallisto and Salmon (separately). 1p
+```{r, echo=TRUE, eval=TRUE}
+compute_cv <- function(expression_values){
+  return (var(expression_values) / mean(expression_values))
+}
+kallisto_cv_val <- apply(logRpkmDF[,grepl("K_", names(logRpkmDF))], 1, compute_cv)
+salmon_cv_val <- apply(logRpkmDF[,grepl("S_", names(logRpkmDF))], 1, compute_cv)
+```
+
 
 ### B)	Plot the distribution of CV values as density lines (in one single plot) using color to indicate the tool and log transform the x-axis (using log10). 1p
+```{r, echo=TRUE, eval=TRUE}
+library(reshape)
+binding_cv <- cbind(kallisto_cv_val, salmon_cv_val)
+binding_cv_melted <- melt(binding_cv)
+colnames(binding_cv_melted) <- c('transcript', 'tool', 'value')
+cv_plot <- ggplot(data=binding_cv_melted, 
+                aes(value, color=tool)) + 
+                geom_density(stat="density", position='identity') +
+                xlab("CV values") +
+                ylab("Density") +
+                scale_x_continuous(trans='log10') +
+                ggtitle("Distribution of CV values as density lines") +
+                theme(plot.title = element_text(hjust = 0.5)) +
+                scale_color_manual(values = 
+                        c('kallisto_cv_val' = "darkblue", 'salmon_cv_val' = "red"))
+cv_plot
+```
+
 
 ### C)	Comment on the CV plots using max 75 words. 2p
 
@@ -205,7 +247,8 @@ library(ggplot2)
 library(GGally)
 ```
 
-## Question 1: Read both the expression matrix ("ExpressionMatrix.tab") and study design ("StudyDesign.tab") into R. Report the number of samples and the number of genes.
+## Question 1: Read both the expression matrix ('ExpressionMatrix.tab') and study design ('StudyDesign.tab') into R. Report the number of samples and the number of genes.
+
 ```{r, echo=TRUE, eval=TRUE}
 expression_m <- read.table('ExpressionMatrix.tab', header=T) # data import
 study_design <- read.table('StudyDesign.tab', header=T) # data import
@@ -221,7 +264,7 @@ In the data set there are 75 samples and 10000 genes.
 expression_m_transposed <- t(expression_m) # transposition of the matrix
 pca_genes <- prcomp(expression_m_transposed, center = T, scale. = T) # pca
 ```
-The expression values have been scaled using center and scale arguments set to TRUE in order to normalize the data. The amount of variance in the first 5 principal components is: PC1:0.05092, PC2:0.03281,  PC3:0.02097, PC4:0.01877, PC5:0.01525.
+The expression values have been scaled using center and scale arguments set to TRUE in order to normalize the data. The amount of variance in the first 5 principal components is: PC1: 0.05092, PC2: 0.03281,  PC3: 0.02097, PC4: 0.01877, PC5: 0.01525.
 
 ## Question 3: Make a plot of PC1 vs PC2, where knock down efficiency is indicated by color and knock down target is indicated by shape. Comment on the plot. 
 ```{r, echo=TRUE, eval=TRUE}
@@ -232,23 +275,24 @@ ggplot(data=gene_plot, aes(PC1, PC2, color=KnockDownEfficiency, shape = KnockDow
   geom_point(size=1.5)+
   ggtitle('PCA of first 2 principal components') +
   theme(plot.title = element_text(hjust = 0.5))
-    
 ```
 The plot shows a clearly separated cluster of control genes with knock down efficiency equals to zero. The majority of Gene A samples seem to have a knock down efficiency between 0.50 and 1 on the other end there are three outliers closer to the control cluster with efficiency closer to zero. The samples from the Gene B are well clustered on the right side of the control targets and they span the entire range of efficiency values.  
 
 ## Question 4: Perform a K-means clustering of the data, using k=3 and 10 random starting points. Visualize the clustering by making a plot of PC1 vs PC2, where the clusters are indicated by color. Briefly comment on how the clustering corresponds to the known knockdown targets.
 ```{r, echo=TRUE, eval=TRUE}
-k3_means <- kmeans(expression_m_transposed, centers=3, nstart = 10) # 3-means with 10 starting points
+# 3-means with 10 starting points
+k3_means <- kmeans(expression_m_transposed, centers=3, nstart = 10) 
 gene_plot$cluster <- factor(k3_means$cluster) # adding clusters to data frame
 # plotting results
-k_means_plot <- ggplot(data=gene_plot, aes(x=PC1, y=PC2, color=cluster, shape = KnockDownTarget)) + 
+k_means_plot <- ggplot(data=gene_plot, aes(x=PC1, y=PC2, color=cluster, 
+                                           shape = KnockDownTarget)) + 
   geom_point(size=1.5) +
   ggtitle('PC1 and PC2 3k-means clustered of gene expression') +
   theme(plot.title = element_text(hjust = 0.5))
 k_means_plot
 ```
 
-The plot shows that the middle cluster contains datapoints with knock down efficiency closer to zero. This cluster should contain only control samples so it is evident that something in the experiment didn't work as expected. The cluster on the right side groups all the samples of Gene B and the other cluster on the left contains all the samples from Gene A with higher knock down efficiencies. 
+The plot shows that the middle cluster contains samples with knock the down efficiency closer to zero. This cluster should contain only control samples so it is evident that something in the experiment didn't work as expected. The cluster on the right side groups all the samples of Gene B and the other cluster on the left contains all the samples from Gene A with higher knock down efficiencies. 
 
 ## Question 5: Using a maximum number of 3 plots, investigate whether there is any truth to the postdoc allegations: Can you see a difference in samples prepared by Alice and Bob? Is there any indication Bob has ruined a sample? Discuss you results using a maximum of 75 words. 
 ```{r, echo=TRUE, eval=TRUE, warning=FALSE}
@@ -290,50 +334,67 @@ head(differential_expression, 3)
 library(ggplot2)
 library(GGally)
 library(gridExtra)
-
-ma_plot <- ggplot(data = differential_expression) + 
-  geom_point(aes(meanExpression, A.logFC), size=1.5, alpha=0.07) +
-  geom_hline(yintercept = 0, col='red')+
-  ggtitle("Ma-plot for Gene A") +
-  ylim(-7,7)+
-  theme(plot.title = element_text(hjust = 0.5))
-
-mb_plot <- ggplot(data = differential_expression) + 
-  geom_point(aes(meanExpression, B.logFC), size=1.5, alpha=0.07) +
+library(reshape)
+melt_de <- melt(differential_expression, measure.vars =c('A.logFC', 'B.logFC'))
+ma_plots <- ggplot(data = melt_de, aes(x = meanExpression, y = value)) + 
+  geom_point(size=1.5, alpha=0.07) +
+  geom_smooth(method = 'loess') +
   geom_hline(yintercept = 0, col='red') +
-  ggtitle("Ma-plot for Gene B") +
-  ylim(-7,7)+
-  theme(plot.title = element_text(hjust = 0.5))
-
-grid.arrange(ma_plot, mb_plot, nrow=1, ncol=2)
+  ggtitle("Ma-plots for Gene A and Gene B") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~variable)
+ma_plots
 
 ```
 
 
 ## Question 3: Explain how an MA-plot can be used to investigate whether expression data has been properly normalized (max 75 words). 
 
+
 ## Question 4: Report the number of upregulated and downregulated genes that are significantly DE after correction for multiple testing (at alpha=0.05). Which knockdown target has the highest total number of DE genes? 
 ```{r, echo=TRUE, eval=TRUE}
-de_genes <- differential_expression[which(differential_expression$A.FDR<0.05 & differential_expression$B.FDR<0.05),]
-down_reg_a <- nrow(de_genes[de_genes$A.logFC<0,])
+de_genes_a <- differential_expression[which(differential_expression$A.FDR<0.05),]
+down_reg_a <- nrow(de_genes_a[de_genes_a$A.logFC<0,])
 down_reg_a
-up_reg_a <- nrow(de_genes[de_genes$A.logFC>0,])
+up_reg_a <- nrow(de_genes_a[de_genes_a$A.logFC>0,])
 up_reg_a
 
-down_reg_b <- nrow(de_genes[de_genes$B.logFC<0,])
+de_genes_b <- differential_expression[which(differential_expression$B.FDR<0.05),]
+down_reg_b <- nrow(de_genes_b[de_genes_b$B.logFC<0,])
 down_reg_b
-up_reg_b <- nrow(de_genes[de_genes$B.logFC>0,])
+up_reg_b <- nrow(de_genes_b[de_genes_b$B.logFC>0,])
 up_reg_b
+```
+For GeneA the number of downregulated genes is 374 and the number of upregulated genes is 380. For GeneB the number of downregulated genes is 645 and the number of upregulated genes is 659, this is the target with the highest number of DE genes: 1304 genes.  
+
+## Question 5: Plot the two sets of logFCs  (log2 fold changes) against each other. Color points based on whether they are significantly DE after multiple testing correction (at alpha=0.05) in either one or both of the knockdowns.
+```{r, echo=TRUE, eval=TRUE}
+log_plot <- ggplot(data = differential_expression) + 
+  geom_point(aes(B.logFC, A.logFC, colour = (A.FDR>0.05 & B.FDR>0.05)), 
+             size=0.8, alpha=0.5) +
+  scale_colour_manual(name = 'significantly DE', values = setNames(c('red','blue'), 
+                                                                   c(T, F))) +
+  ggtitle("logFC values of both GeneA and Gene B") +
+  theme(plot.title = element_text(hjust = 0.5))
+log_plot
 ```
 
 
+## Question 6: Calculate the Pearson correlation between the logFCs of the two knockdowns, and test whether this correlation is significant.
+```{r, echo=TRUE, eval=TRUE}
+p_correlation <- cor(differential_expression$A.logFC, differential_expression$B.logFC, 
+                     method="pearson")
+p_correlation
+```
+The correlation coefficient is 0.1829156 denoting a very weak positive correlation between the two knockdowns.
 
-## Question 5: Plot the two sets of logFCs  (log2 fold changes) against each other. Color points based on whether they are significantly DE after multiple testing correction (at alpha=0.05) in either one or both of the knockdowns. 3p
 
-## Question 6: Calculate the Pearson correlation between the logFCs of the two knockdowns, and test whether this correlation is significant. 2p
-
-## Question 7: Caroline asks you to construct a 2-by-2 contingency table showing whether genes are significantly DE (after correcting for multiple testing, alpha=0.05) in the two knockdowns. Perform a Fisher???s Exact test for any association between the DE genes in the two knockdowns. 3p
+## Question 7: Caroline asks you to construct a 2-by-2 contingency table showing whether genes are significantly DE (after correcting for multiple testing, alpha=0.05) in the two knockdowns. Perform a Fisher???s Exact test for any association between the DE genes in the two knockdowns.
+```{r, echo=TRUE, eval=TRUE}
+de_table <- table(differential_expression$A.FDR<0.05, differential_expression$B.FDR<0.05)
+fisher.test(de_table)
+```
 
 ## Question 8: Based on Question 4-7, do you think the geneA and geneB transcription factors regulate the same genes? Use a maximum of 100 words.
-
-
+the differential expression is different - 
+no 
