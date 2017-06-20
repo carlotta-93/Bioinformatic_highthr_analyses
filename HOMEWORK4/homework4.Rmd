@@ -1,6 +1,6 @@
 ---
 title: "Homework4"
-author: "Carlotta Porcelli - exam_ID 62"
+author: "Carlotta Porcelli - exam_ID 62 - student_ID qbp693"
 date: "6/13/2017"
 output: pdf_document
 ---
@@ -14,25 +14,27 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Question 1A: Merge the ChIP peaks that overlap over 1bp or more. How many merged regions are produced compared to how many peaks you started with?
 
 In order to run the _bedtools merge_, the _txnCHIP.bed_ file needs to be sorted. This is done by chromosome and then by start position.
-
 ```{bash, echo=TRUE, eval=FALSE}
 sort -k1,1 -k2,2n txnChIP.bed > sorted_txnCHIP.bed # presort of .bed file
 ```
 
 ```{bash, echo=TRUE, eval=FALSE}
+# count of the total amount of peaks
 wc -l txnChIP.bed 
 ```
-The length of the _txnCHIP.bed_ file is: 4380444.
+The total amount of peaks in the _txnCHIP.bed_ file is: 4380444.
 
 Merging the _txnCHIP.bed_ file is done not only merging the intervals but also reporting the number of intervals that were integrated into the new file using the __-c 1__ (applying _option_ on first column) and __-o count__ parameters. 
 ```{bash, echo=TRUE, eval=FALSE}
+# merging the intervals 
 bedtools merge -i sorted_txnCHIP.bed -c 1 -o count > count_merged_sorted_txnCHIP.bed
 ```
 
 ```{bash, echo=TRUE, eval=FALSE}
+# count of merged intervals
 wc -l count_merged_sorted_txnCHIP.bed
 ```
-The merge tool produced 746610 regions, with a difference of 3633834 regions compared to the initial peaks number. 
+The merge tool produced 746610 overlapping regions, with a difference of 3633834 regions compared to the initial peaks number. 
 
 ## Question 1B: Plot the distribution of ChIP peaks in each merged region. Briefly comment your plot.
 ```{r, echo=TRUE, warning=FALSE}
@@ -52,6 +54,7 @@ The plot shows that more than 3e+05 of the merged regions are composed of only o
 
 ## Question 1C: Using R, produce a new BED file that contains the 10 merged regions having the highest number of ChIP peaks.
 ```{r, echo=TRUE}
+# producing the .BED file with the 10 merged regions with highest number of peaks
 top_10 <- as.data.frame(CHIP_peaks[order(-CHIP_peaks$V4),][0:10,])
 write.table(top_10, file='top_10_CHIP_peaks.bed', quote = F, row.names = F, col.names = F)
 ```
@@ -60,16 +63,18 @@ write.table(top_10, file='top_10_CHIP_peaks.bed', quote = F, row.names = F, col.
 Once the top_10 CHIP peaks BED file has been uploaded on the UCSC browser, the track has been mapped to the hg19 assembly.
 ![Screenshots of the 10 merged regions with the highest number of ChIP peaks]
 
-All of the merged regions overlap the RNA polymerase II subunit __POLR2A__. The __POLR2A__ forms the largest subunit of RNA polymerase II, enzyme responsible for synthesizing messenger RNA in eukaryotes. In addition, this subunit forms the DNA binding domain of the polymerase, a groove in which the DNA template is transcribed into RNA.[Reference: ](https://www.ncbi.nlm.nih.gov/gene/5430). The transcription factors binding sites are clustered because of the presence of __POLR2A__ and its repeatedly presence. 
+All of the merged regions overlap the RNA polymerase II subunit alpha __POLR2A__. 'The __POLR2A__ forms the largest subunit of RNA polymerase II, enzyme responsible for synthesizing messenger RNA in eukaryotes. In addition, this subunit forms the DNA binding domain of the polymerase, a groove in which the DNA template is transcribed into RNA'.[Reference: ](https://www.ncbi.nlm.nih.gov/gene/5430). The transcription factors binding sites are clustered because of the presence of __POLR2A__ and its repeatedly presence. 
 
 ## Question 1E: What could we have done to improve the analysis? 
-To improve the analysis the merge function could be set to combine regions that overlap for more than one basepair. This constraint would produce less overlapping regions. 
+Firstly, to improve the analysis, the merge function from bedtools could be set to combine regions that overlap for more than one basepair. This constraint would produce less overlapping regions resulting in a confirmation of the clusters already found or in small changes in them.
+Secondly, an analysis on consensus sequences could be performed. Being the RNA plymerase a sequence-dependent enzyme this would show if the transcription factors clustered by __POL2RA__ share the same sequence thus share similar functions and are part of the same process (that could be helping the RNAPol to bind to the DNA strand).
 
 # PART 2
 
 ## Question 2.1: Provide one line of code which will make symbolic links only to the 6 fastq files.
 ```{bash, eval=F, echo=T}
-ln -s /home/bohta/HW4/part2/*.fastq /home/qbp693/
+# make a symbolic link to the .fastaq files into the user folder
+ln -s /home/bohta/HW4/part2/*.fastq /home/qbp693/ 
 ```
 
 ## Question 2.2: Check how well the sequencing run went - Use the 'wc' function to calculate the number of reads in all fastq files and comment on the results.
@@ -77,7 +82,7 @@ ln -s /home/bohta/HW4/part2/*.fastq /home/qbp693/
 grep '^+$' -c *.fastq # counts the number of lines starting and ending with '+' sign
 ```
 The count of reads for each file is: WT1_R1.fastq:45626717, WT1_R2.fastq:45626717, WT2_R1.fastq:41428670, WT2_R2.fastq:41428670, WT3_R1.fastq:19326183, WT3_R2.fastq:19326183
-It is noticeable that there is no difference in number of reads between the strands R1 and R2 of the same library. This is because the two files come from the same cDNA sequence and they have probably been trimmed before removing the orphan reads.
+It is noticeable that there is no difference in number of reads between the strands R1 and R2 of the same library. This is because the two files come from the same cDNA sequence and they have probably been trimmed before, removing the orphan reads.
 
 ## Question 2.3: 
 ### A) Report the command for running Kallisto on the WT1 RNA-seq data.
@@ -135,7 +140,6 @@ e_len_kal
 e_len_salmon
 ```
 
-
 ### B) What could explain the difference in the effective length? Which estimate do you trust more?
 
 The effective lengths will be affected by the estimated empirical fragment length distribution, the method of calculating effective lengths and whether or not bias correction is used. The most trustworthy is the Salmon computation because it corrects not only the for sequence-specific biases but also for the fragment-level GC biases. Moreover it is unlikely that the effective length is larger than the actual length as Kallisto shows.
@@ -164,9 +168,9 @@ mean_values <- colMeans(Rpkm_values) # compute of mean values for each sample
 mean_values
 ```
 
-## Question 3.4: Make histograms of the distribution of the logRpkm expression values.
+## Question 3.4: Make histograms of the distribution of the logRpkm expression values. Comment on the distribution with max 50 words.
 ```{r, echo=TRUE, eval=TRUE}
-library(reshape)
+library(reshape2)
 library(ggplot2)
 logRpkmDF_melt <- melt(logRpkmDF)
 # adding two columns with labels for tool and for replicates
@@ -189,7 +193,7 @@ logRpkm_plot <- ggplot(data=logRpkmDF_melt,
                 facet_wrap(~replicate)
 logRpkm_plot
 ```
-
+The plot shows that the frequency of samples with value RPKM value equals 0 from Kallisto tool is higher than the frequency from Salmon analysis. The highest frequency is registered in the WT3 from Kallisto replicates with a value greater than 12000. In all of the replicates the frequency of the samples decreases with the increasing of the RPKM values.
 
 ## Question 3.5: For each tool use logRpkm to calculate all pairwise replicate Pearson correlations of the replicate expression values and report the numbers in a table (one table per tool).
 
@@ -216,7 +220,7 @@ salmon_cv_val <- apply(logRpkmDF[,grepl("S_", names(logRpkmDF))], 1, compute_cv)
 
 ### B)	Plot the distribution of CV values as density lines (in one single plot) using color to indicate the tool and log transform the x-axis (using log10). 1p
 ```{r, echo=TRUE, eval=TRUE}
-library(reshape)
+library(reshape22)
 binding_cv <- cbind(kallisto_cv_val, salmon_cv_val)
 binding_cv_melted <- melt(binding_cv)
 colnames(binding_cv_melted) <- c('transcript', 'tool', 'value')
@@ -233,11 +237,11 @@ cv_plot <- ggplot(data=binding_cv_melted,
 cv_plot
 ```
 
-
 ### C)	Comment on the CV plots using max 75 words. 2p
-
+The plot shows that most of the replicates from Salmon analysis have a cross-replicate variance value greater than 10^-2. From Kallisto analysis, instead, the plot shows that less replicates have a smaller cross-replicate variance value, lower than 10^-2. The cross-replicate variability in the replicates is estimated by the count variance as a function of the mean. 
 
 ## Question 3.7: Based on all the results you have collected here (all of part 2 and all of part 3), discuss in max 100 words which tool would you choose to continue with if you wanted to make a differential expression analysis.
+
 
 
 # PART 4
@@ -248,7 +252,6 @@ library(GGally)
 ```
 
 ## Question 1: Read both the expression matrix ('ExpressionMatrix.tab') and study design ('StudyDesign.tab') into R. Report the number of samples and the number of genes.
-
 ```{r, echo=TRUE, eval=TRUE}
 expression_m <- read.table('ExpressionMatrix.tab', header=T) # data import
 study_design <- read.table('StudyDesign.tab', header=T) # data import
@@ -272,11 +275,11 @@ library(ggplot2)
 library(GGally)
 gene_plot <- data.frame(pca_genes$x, study_design) 
 ggplot(data=gene_plot, aes(PC1, PC2, color=KnockDownEfficiency, shape = KnockDownTarget)) + 
-  geom_point(size=1.5)+
+  geom_point(size=2)+
   ggtitle('PCA of first 2 principal components') +
   theme(plot.title = element_text(hjust = 0.5))
 ```
-The plot shows a clearly separated cluster of control genes with knock down efficiency equals to zero. The majority of Gene A samples seem to have a knock down efficiency between 0.50 and 1 on the other end there are three outliers closer to the control cluster with efficiency closer to zero. The samples from the Gene B are well clustered on the right side of the control targets and they span the entire range of efficiency values.  
+The plot shows a clearly separated cluster of control genes with knock down efficiency equals to zero. The majority of Gene A samples seem to have a knock down efficiency between 0.50 and 1 on the other end there are three outliers closer to the control cluster with efficiency closer to zero. The samples from the Gene B are well clustered on the right side of the control cluster. They span the across the range of efficiency values but still a small amount of samples has knockdown efficiency closer to zero.  
 
 ## Question 4: Perform a K-means clustering of the data, using k=3 and 10 random starting points. Visualize the clustering by making a plot of PC1 vs PC2, where the clusters are indicated by color. Briefly comment on how the clustering corresponds to the known knockdown targets.
 ```{r, echo=TRUE, eval=TRUE}
@@ -296,29 +299,29 @@ The plot shows that the middle cluster contains samples with knock the down effi
 
 ## Question 5: Using a maximum number of 3 plots, investigate whether there is any truth to the postdoc allegations: Can you see a difference in samples prepared by Alice and Bob? Is there any indication Bob has ruined a sample? Discuss you results using a maximum of 75 words. 
 ```{r, echo=TRUE, eval=TRUE, warning=FALSE}
+library(ggrepel)
 KD_effiency <- ggplot(data=study_design,
             aes(KnockDownEfficiency, fill=PostDoc)) + 
             geom_bar(stat="bin", binwidth = 0.5, position=position_dodge()) +
-            scale_fill_manual(values = c("Bob" = "darkblue", "Alice" = "red"))+
+            scale_fill_manual(values = c("Bob" = "#9999ff", "Alice" = "#f2983e"))+
             xlab("KnockDown efficiency") +
             ylab("Counts") +
             ggtitle("Genes knockdown efficiency") +
             theme(plot.title = element_text(hjust = 0.5))+
             facet_wrap(~KnockDownTarget)
 KD_effiency
-k_means_plot + geom_text(aes(label=PostDoc), size=3, hjust=-0.25, vjust=-0.8)
+```
+All the Control samples from both PostDocs have KnockDownEfficiency equals to zero, as expected. For Gene A, Bob got fewer samples with 0 efficiency than Alice. For Gene B Alice appears to have more samples with efficiency value equals to zero than Bob.
 
-distances <- dist(study_design$KnockDownEfficiency)
-distance_tree <- hclust(distances)
-plot(distance_tree, label=study_design$PostDoc, 
-     col = "#487AA1", col.axis = "#F38630",
-     main='Distances tree')
+```{r, echo=TRUE, eval=TRUE}
+k_means_plot + geom_text(aes(label=PostDoc), size=3, hjust=0.9, vjust=1.5) + facet_wrap(~PostDoc)
 
 ```
 
+From the plot with PostDoc labels it is clear that Bob might have affected one of the Control sample as it is significantly further away from the samples in the cluster.  
 
 ## Question 6: Based on all you observations in Question 1-5, discuss whether the experiment is still useful, or whether the postdocs have ruined it. Use a maximum of 100 words. 3p
-
+From all the observations it looks like Alice has a good reason for saying that Bob has sneezed in one of the sample because of the outliers shown from the PCA plots. Moreover, it has to be noted that a considerate number of samples from Alice are clustered wrongly in the Control cluster because of their KnockDownEfficiency value. That said, the experiment could still be useful to some extent removing some of the data that looks compromised. On the other end it is true that if the experiment is need for a more accurate analysis it should probably be performed again.
 
 # PART 5
 
@@ -328,17 +331,17 @@ differential_expression <- read.table('DifferentialExpression.tab', header=T)
 head(differential_expression, 3)
 ```
 
-
 ## Question 2: As part of a single plot, produce two MA-plots (one for each knockdown). To mitigate overplotting, points on the plot should be transparent
 ```{r, echo=T, eval=TRUE}
 library(ggplot2)
 library(GGally)
 library(gridExtra)
-library(reshape)
+library(reshape2)
 melt_de <- melt(differential_expression, measure.vars =c('A.logFC', 'B.logFC'))
+
 ma_plots <- ggplot(data = melt_de, aes(x = meanExpression, y = value)) + 
   geom_point(size=1.5, alpha=0.07) +
-  geom_smooth(method = 'loess') +
+  geom_smooth(method = 'loess', se=FALSE) +
   geom_hline(yintercept = 0, col='red') +
   ggtitle("Ma-plots for Gene A and Gene B") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -394,6 +397,8 @@ The correlation coefficient is 0.1829156 denoting a very weak positive correlati
 de_table <- table(differential_expression$A.FDR<0.05, differential_expression$B.FDR<0.05)
 fisher.test(de_table)
 ```
+alternative: there is correlation between samples 
+low corrlation - p value is low -> 
 
 ## Question 8: Based on Question 4-7, do you think the geneA and geneB transcription factors regulate the same genes? Use a maximum of 100 words.
 the differential expression is different - 
