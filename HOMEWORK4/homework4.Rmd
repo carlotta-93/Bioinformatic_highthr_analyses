@@ -82,9 +82,9 @@ ln -s /home/bohta/HW4/part2/*.fastq /home/qbp693/
 grep '^+$' -c *.fastq # counts the number of lines starting and ending with '+' sign
 ```
 The count of reads for each file is: WT1_R1.fastq:45626717, WT1_R2.fastq:45626717, WT2_R1.fastq:41428670, WT2_R2.fastq:41428670, WT3_R1.fastq:19326183, WT3_R2.fastq:19326183
-It is noticeable that there is no difference in number of reads between the strands R1 and R2 of the same library. This is because the two files come from the same cDNA sequence and they have probably been trimmed before, removing the orphan reads.
+It is noticeable that there is no difference in number of reads between the strands R1 and R2 of the same library. This is because the two files come from the same cDNA sequence and they have been trimmed before, removing the orphan reads.
 
-## Question 2.3: 
+## Question 2.3: Quantification of data using Kallisto
 ### A) Report the command for running Kallisto on the WT1 RNA-seq data.
 ```{bash, echo=T, eval=F}
 nice /home/bohta/bin/kallisto quant --index /home/bohta/HW4/part2/kallistoIndex 
@@ -96,6 +96,7 @@ The number of pseudo-aligned reads is 23720001.
 
 ### C*) Report the estimated average fragment length. Based on this result, what is then the distance between the 3' ends of the two reads in an average read pair?
 The estimated average fragment length is 178.486. 
+
 ```{bash, echo=T, eval=FALSE}
 cat WT1_R1.fastq | awk '{if(NR%4==2) print length($1)}' > input_readslength_R1.txt
 cat WT1_R2.fastq | awk '{if(NR%4==2) print length($1)}' > input_readslength_R2.txt
@@ -110,10 +111,11 @@ avg_fragment_length <- 178.486
 # computes the absolute distance between 3' ends
 abs(avg_fragment_length - (r1_mean+r2_mean)) 
 ```
+
 The resulting fragment from the computation is a transcript compatible with the mapped reads, this means that the distance between the two 3' ends of a read pair can be computed as the absolute difference between the average_fragment_length and the average length of the reads in R1 and R2.
 This results in an average distance between the 3' ends of an average read pair of almost 18 bases.
 
-## Question 2.4: 
+## Question 2.4: Quantification of data using Salmon
 ### A*) Report the command for running Salmon on the WT1 RNA-seq data.
 ```{bash, eval=F, echo=T}
 nice /home/bohta/bin/salmon quant --index /home/bohta/HW4/part2/salmonIndex -p 6 
@@ -127,7 +129,7 @@ The automatically detected most likely library is ISF.
 The mapping rate = 60.9567%.
 
 ## Question 2.5: Which tool aligned more reads? Comment on the result.
-Salmon aligned 27812554 reads, with almost 61% of mapped reads whereas Kallisto mapped almost 52% . Kallisto is based on pseudoalignments to _compatible transcripts_, Salmon is based on lightweight alignments, chains of maximal and super maximal exact matches. Both of the tools mapped above 50% which can be considerated as a good result but surely Salmon performed better.
+Salmon aligned 27812554 reads, with almost 61% of mapped reads whereas Kallisto mapped almost 52% . Kallisto is based on pseudoalignments to _compatible transcripts_, Salmon is based on lightweight alignments, chains of maximal and super maximal exact matches. Both of the tools mapped above 50% which can be considerated as a good result but it looks like Salmon performed better.
 
 ## Question 2.6: 
 ### A) Compare the estimated 'effective length' of the isoform 'TCONS_00000020' from Kallisto and Salmon to each other and the reference length. 
@@ -142,9 +144,10 @@ e_len_salmon
 
 ### B) What could explain the difference in the effective length? Which estimate do you trust more?
 
-The effective lengths will be affected by the estimated empirical fragment length distribution, the method of calculating effective lengths and whether or not bias correction is used. The most trustworthy is the Salmon computation because it corrects not only the for sequence-specific biases but also for the fragment-level GC biases. Moreover it is unlikely that the effective length is larger than the actual length as Kallisto shows.
+The effective lengths will be affected by the estimated empirical fragment length distribution, the method of calculating effective lengths and whether or not bias correction is used. The most trustworthy is the Salmon computation because it corrects not only the for sequence-specific biases but also for the fragment-level GC biases. Moreover it is unlikely that the effective length is higher than the actual length as Kallisto shows.
 
 # PART 3
+
 ## Question 3.1: Load the data into R. How many isoforms are quantified in the count data? 
 ```{r, echo=TRUE, eval=TRUE}
 part3_data <- load('part3.Rdata')
@@ -193,7 +196,7 @@ logRpkm_plot <- ggplot(data=logRpkmDF_melt,
                 facet_wrap(~replicate)
 logRpkm_plot
 ```
-The plot shows that the frequency of samples with value RPKM value equals 0 from Kallisto tool is higher than the frequency from Salmon analysis. The highest frequency is registered in the WT3 from Kallisto replicates with a value greater than 12000. In all of the replicates the frequency of the samples decreases with the increasing of the RPKM values.
+The plot shows that the frequency of samples with value RPKM value closer to 0 from Kallisto tool is higher than the frequency from Salmon analysis. The frequency of samples from Salmon, with values closer to zero is, in all replicates, lower than Kallisto. In the end, all of the replicates frequency distribution follows the same patter; the frequency decreases with the increasing of the RPKM values.
 
 ## Question 3.5: For each tool use logRpkm to calculate all pairwise replicate Pearson correlations of the replicate expression values and report the numbers in a table (one table per tool).
 
@@ -220,7 +223,7 @@ salmon_cv_val <- apply(logRpkmDF[,grepl("S_", names(logRpkmDF))], 1, compute_cv)
 
 ### B)	Plot the distribution of CV values as density lines (in one single plot) using color to indicate the tool and log transform the x-axis (using log10). 1p
 ```{r, echo=TRUE, eval=TRUE}
-library(reshape22)
+library(reshape2)
 binding_cv <- cbind(kallisto_cv_val, salmon_cv_val)
 binding_cv_melted <- melt(binding_cv)
 colnames(binding_cv_melted) <- c('transcript', 'tool', 'value')
@@ -238,11 +241,20 @@ cv_plot
 ```
 
 ### C)	Comment on the CV plots using max 75 words. 2p
-The plot shows that most of the replicates from Salmon analysis have a cross-replicate variance value greater than 10^-2. From Kallisto analysis, instead, the plot shows that less replicates have a smaller cross-replicate variance value, lower than 10^-2. The cross-replicate variability in the replicates is estimated by the count variance as a function of the mean. 
+The plot shows that most of the replicates from Salmon analysis have a cross-replicate variance value greater than 10^-2. From Kallisto analysis, instead, the plot shows that less replicates have a smaller cross-replicate variance value, closer to 10^-2. Variabiliy is lower in kallisto than salmon 
 
 ## Question 3.7: Based on all the results you have collected here (all of part 2 and all of part 3), discuss in max 100 words which tool would you choose to continue with if you wanted to make a differential expression analysis.
-
-
+from pearson: really strong linear positive correlation inbetween the replicates -> they are credible
+replicates in salmon have more variability - less accurate - kallisto maps less reads -> less variability 
+salmon variability is higher - > less accurate -> values are more spread 
+The precision of these estimates strongly depends on the number (and
+variation) of replicates ??? the more replicates, the better the grasp on the underlying mean expression values of
+unchanged genes and the variance that is due to biological variation rather than the experimental treatment.
+For most RNA-seq experiments, only two to three replicates are available, which is not enough for reliable
+mean and variance estimates. Some tools therefore compensate for the lack of replication by borrowing
+information across genes with similar expression values and shrink a given gene???s variance towards the
+regressed values. These fitted values of the mean and dispersion are then used instead of the raw estimates
+to test for differential gene expression
 
 # PART 4
 ```{r, echo=TRUE, eval=TRUE}
@@ -338,11 +350,13 @@ library(GGally)
 library(gridExtra)
 library(reshape2)
 melt_de <- melt(differential_expression, measure.vars =c('A.logFC', 'B.logFC'))
+de_significant = c(differential_expression$A.FDR<0.05, differential_expression$B.FDR<0.05)
 
-ma_plots <- ggplot(data = melt_de, aes(x = meanExpression, y = value)) + 
+ma_plots <- ggplot(data = melt_de, aes(x = meanExpression, y = value, color=de_significant))+ 
   geom_point(size=1.5, alpha=0.07) +
-  geom_smooth(method = 'loess', se=FALSE) +
+  geom_smooth(method = 'loess', se=FALSE, color='blue') +
   geom_hline(yintercept = 0, col='red') +
+  scale_color_manual(values = c('TRUE'= "red", 'FALSE' = "black"))+
   ggtitle("Ma-plots for Gene A and Gene B") +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~variable)
@@ -352,6 +366,14 @@ ma_plots
 
 
 ## Question 3: Explain how an MA-plot can be used to investigate whether expression data has been properly normalized (max 75 words). 
+The MA plot shows the relationship between the expression change (M) and average expression
+strength (A); genes with adjusted p-values <0.05 are marked in red.
+variation between samples may be
+due to contamination as well as biological reasons. The purpose of normalization is to eliminate systematic
+effects that are not associated with the biological differences of interest
+RPKM, FPKM etc. are only needed if expression values need to be compared
+between different genes within the same sample for which the different gene lengths must be taken
+into consideration
 
 
 ## Question 4: Report the number of upregulated and downregulated genes that are significantly DE after correction for multiple testing (at alpha=0.05). Which knockdown target has the highest total number of DE genes? 
@@ -373,10 +395,9 @@ For GeneA the number of downregulated genes is 374 and the number of upregulated
 ## Question 5: Plot the two sets of logFCs  (log2 fold changes) against each other. Color points based on whether they are significantly DE after multiple testing correction (at alpha=0.05) in either one or both of the knockdowns.
 ```{r, echo=TRUE, eval=TRUE}
 log_plot <- ggplot(data = differential_expression) + 
-  geom_point(aes(B.logFC, A.logFC, colour = (A.FDR>0.05 & B.FDR>0.05)), 
+  geom_point(aes(B.logFC, A.logFC, colour = (A.FDR<0.05 | B.FDR<0.05)), 
              size=0.8, alpha=0.5) +
-  scale_colour_manual(name = 'significantly DE', values = setNames(c('red','blue'), 
-                                                                   c(T, F))) +
+  scale_colour_manual(name = 'significantly DE', values = setNames(c('red','blue'), c(T, F))) +
   ggtitle("logFC values of both GeneA and Gene B") +
   theme(plot.title = element_text(hjust = 0.5))
 log_plot
@@ -391,15 +412,21 @@ p_correlation
 ```
 The correlation coefficient is 0.1829156 denoting a very weak positive correlation between the two knockdowns.
 
-
 ## Question 7: Caroline asks you to construct a 2-by-2 contingency table showing whether genes are significantly DE (after correcting for multiple testing, alpha=0.05) in the two knockdowns. Perform a Fisher???s Exact test for any association between the DE genes in the two knockdowns.
+The Fisher's Exact test is used to check whether the differental expression is different between the two knockdown. The hypoteses for Fisher test are:
+H0: The two knockdowns are not significantly differently differentially-expressed - their differential expression is equal 
+H1: The two knockdowns are significantly differently differentially-expressed - their differential expression is not equal
 ```{r, echo=TRUE, eval=TRUE}
 de_table <- table(differential_expression$A.FDR<0.05, differential_expression$B.FDR<0.05)
 fisher.test(de_table)
 ```
-alternative: there is correlation between samples 
-low corrlation - p value is low -> 
 
 ## Question 8: Based on Question 4-7, do you think the geneA and geneB transcription factors regulate the same genes? Use a maximum of 100 words.
+The two transcription factors regulate different genes. This conclusion is based on the following observations:
+From question 4, GeneB target results in a higher number of DE genes, almost double than GeneA knockdown. 
+The plot in question 5 shows that most of the genes with logFC values around zero are not significantly expressed. 
+The Fisher test's resulting p-value is equal to 2.116e-11, which is below our significance threshold of 0.05, therefore we can reject the null hypothesis. This leads to  
+alternative: there is correlation between samples 
+low corrlation - p value is low -> reject null hypo 
 the differential expression is different - 
 no 
