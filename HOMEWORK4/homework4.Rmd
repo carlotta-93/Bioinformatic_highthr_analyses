@@ -144,6 +144,7 @@ Salmon aligned 27812554 reads, with almost 61% of mapped reads whereas Kallisto 
 
 ## Question 2.6: 
 ### A) Compare the estimated 'effective length' of the isoform 'TCONS_00000020' from Kallisto and Salmon to each other and the reference length. 
+
 ```{r, echo=TRUE, eval=T}
 kallisto_quant <- read.table('abundance.tsv', header=T)
 salmon_quant <- read.table('quant.sf', header=T)
@@ -160,13 +161,16 @@ The effective lengths will be affected by the estimated empirical fragment lengt
 # PART 3
 
 ## Question 3.1: Load the data into R. How many isoforms are quantified in the count data? 
+
 ```{r, echo=TRUE, eval=TRUE}
 part3_data <- load('part3.Rdata')
 nrow(countDF)
 ```
+
 The number of isoforms quantified in the count data is: 5787.
 
 ## Question 3.2: Report the R code for how to calculate RPKM values.
+
 ```{r, echo=TRUE, eval=TRUE}
 library_size <- colSums(countDF) # number of reads mapped
 transcript_lenghts <- c(annotationDF$length) # vector of lengths of transcripts
@@ -177,12 +181,14 @@ head(Rpkm_values, 2)
 ```
 
 ## Question 3.3: Make a one-liner (without the use of ';') that outputs the mean RPKM value of each sample. The restrictions from the previous question no longer apply.
+
 ```{r, echo=TRUE, eval=TRUE, warning=FALSE}
 mean_values <- colMeans(Rpkm_values) # compute of mean values for each sample
 mean_values
 ```
 
 ## Question 3.4: Make histograms of the distribution of the logRpkm expression values. Comment on the distribution with max 50 words.
+
 ```{r, echo=TRUE, eval=TRUE}
 library(reshape2)
 library(ggplot2)
@@ -207,6 +213,7 @@ logRpkm_plot <- ggplot(data=logRpkmDF_melt,
                 facet_wrap(~replicate)
 logRpkm_plot
 ```
+
 The plot shows that the frequency of samples with value RPKM value closer to 0 from Kallisto tool is higher than the frequency from Salmon analysis. The frequency of samples from Salmon, with values closer to zero is, in all replicates, lower than Kallisto. In the end, all of the replicates frequency distribution follows the same patter; the frequency decreases with the increasing of the RPKM values.
 
 ## Question 3.5: For each tool use logRpkm to calculate all pairwise replicate Pearson correlations of the replicate expression values and report the numbers in a table (one table per tool).
@@ -223,6 +230,7 @@ logrpmk_table_salmon
 
 ## Question 3.6: 
 ### A)	Construct a function which calculates the CV and use the apply() function to calculate the CV based on logRpkm values for Kallisto and Salmon (separately). 1p
+
 ```{r, echo=TRUE, eval=TRUE}
 compute_cv <- function(expression_values){
   return (var(expression_values) / mean(expression_values))
@@ -233,6 +241,7 @@ salmon_cv_val <- apply(logRpkmDF[,grepl("S_", names(logRpkmDF))], 1, compute_cv)
 
 
 ### B)	Plot the distribution of CV values as density lines (in one single plot) using color to indicate the tool and log transform the x-axis (using log10). 1p
+
 ```{r, echo=TRUE, eval=TRUE}
 library(reshape2)
 binding_cv <- cbind(kallisto_cv_val, salmon_cv_val)
@@ -252,13 +261,16 @@ cv_plot
 ```
 
 ### C)	Comment on the CV plots using max 75 words. 2p
+
 The plot shows that most of the replicates from Salmon analysis have a cross-replicate variance value greater than 10^-2. From Kallisto analysis, instead, the plot shows that less replicates have a smaller cross-replicate variance value, closer to 10^-2. Variabiliy is lower in kallisto than salmon 
 
 ## Question 3.7: Based on all the results you have collected here (all of part 2 and all of part 3), discuss in max 100 words which tool would you choose to continue with if you wanted to make a differential expression analysis.
+
 If a differential expression analysis would be conducted on these data I would choose Salmon tool. 
 From the results collected it can be said that Salmon catches the more variability across the samples even though it is less accurate as seen from the distribution of density CV values. On top of that, Kallisto reported lower mapping rate meaning that less variability is catched. That said, the precision of these estimates also depends on the number of replicates, having only 3 replicates doesn't completely allow us to rely on the mean and variance estimates. 
 
 # PART 4
+
 ```{r, echo=TRUE, eval=TRUE}
 set.seed(2017)
 library(ggplot2)
@@ -266,6 +278,7 @@ library(GGally)
 ```
 
 ## Question 1: Read both the expression matrix ('ExpressionMatrix.tab') and study design ('StudyDesign.tab') into R. Report the number of samples and the number of genes.
+
 ```{r, echo=TRUE, eval=TRUE}
 expression_m <- read.table('ExpressionMatrix.tab', header=T) # data import
 study_design <- read.table('StudyDesign.tab', header=T) # data import
@@ -274,16 +287,20 @@ samples_number
 gene_number <- nrow(expression_m)
 gene_number
 ```
+
 In the data set there are 75 samples and 10000 genes.
 
 ## Question 2: Perform PCA on the samples and report the amount of variance contained in the first 5 principle components.
+
 ```{r, echo=TRUE, eval=TRUE}
 expression_m_transposed <- t(expression_m) # transposition of the matrix
 pca_genes <- prcomp(expression_m_transposed, scale. = T) # pca
 ```
+
 The expression values have been scaled using center and scale arguments set to TRUE in order to scale the data. The amount of variance in the first 5 principal components is: PC1: 0.05092, PC2: 0.03281,  PC3: 0.02097, PC4: 0.01877, PC5: 0.01525 for a total amount of 13.872%.
 
 ## Question 3: Make a plot of PC1 vs PC2, where knock down efficiency is indicated by color and knock down target is indicated by shape. Comment on the plot. 
+
 ```{r, echo=TRUE, eval=TRUE}
 library(ggplot2)
 library(GGally)
@@ -293,9 +310,11 @@ ggplot(data=gene_plot, aes(PC1, PC2, color=KnockDownEfficiency, shape = KnockDow
   ggtitle('PCA of first 2 principal components') +
   theme(plot.title = element_text(hjust = 0.5))
 ```
+
 The plot shows a clearly separated cluster of control genes with knock down efficiency equals to zero. The majority of Gene A samples seem to have a knock down efficiency between 0.50 and 1 on the other end there are three outliers closer to the control cluster with efficiency closer to zero. The samples from the Gene B are well clustered on the right side of the control cluster. They span the across the range of efficiency values but still a small amount of samples has knockdown efficiency closer to zero.  
 
 ## Question 4: Perform a K-means clustering of the data, using k=3 and 10 random starting points. Visualize the clustering by making a plot of PC1 vs PC2, where the clusters are indicated by color. Briefly comment on how the clustering corresponds to the known knockdown targets.
+
 ```{r, echo=TRUE, eval=TRUE}
 # 3-means with 10 starting points
 k3_means <- kmeans(expression_m_transposed, centers=3, nstart = 10) 
@@ -312,6 +331,7 @@ k_means_plot
 The plot shows that the middle cluster contains samples with knock the down efficiency closer to zero. This cluster should contain only control samples so it is evident that something in the experiment didn't work as expected. The cluster on the right side groups all the samples of Gene B and the other cluster on the left contains all the samples from Gene A with higher knock down efficiencies. 
 
 ## Question 5: Using a maximum number of 3 plots, investigate whether there is any truth to the postdoc allegations: Can you see a difference in samples prepared by Alice and Bob? Is there any indication Bob has ruined a sample? Discuss you results using a maximum of 75 words. 
+
 ```{r, echo=TRUE, eval=TRUE, warning=FALSE}
 library(ggrepel)
 KD_effiency <- ggplot(data=study_design,
@@ -325,6 +345,7 @@ KD_effiency <- ggplot(data=study_design,
             facet_wrap(~KnockDownTarget)
 KD_effiency
 ```
+
 All the Control samples from both PostDocs have KnockDownEfficiency equals to zero, as expected. For Gene A, Bob got fewer samples with 0 efficiency than Alice. For Gene B Alice appears to have more samples with efficiency value equals to zero than Bob.
 
 ```{r, echo=TRUE, eval=TRUE}
@@ -334,17 +355,20 @@ k_means_plot + geom_text(aes(label=PostDoc), size=3, hjust=0.9, vjust=1.5) + fac
 From the plot with PostDoc labels it is clear that Bob might have affected one of the Control sample as it is significantly further away from the samples in the cluster.  
 
 ## Question 6: Based on all you observations in Question 1-5, discuss whether the experiment is still useful, or whether the postdocs have ruined it. Use a maximum of 100 words. 3p
+
 From all the observations it looks like Alice has a good reason for saying that Bob has sneezed in one of the sample because of the outliers shown from the PCA plots. Moreover, it has to be noted that a considerate number of samples from Alice are clustered wrongly in the Control cluster because of their KnockDownEfficiency value. That said, the experiment could still be useful to some extent removing some of the data that looks compromised. On the other end it is true that if the experiment is need for a more accurate analysis it should probably be performed again.
 
 # PART 5
 
 ## Question 1: Read the DE analysis ('DifferentialExpression.tab) results into R, and show the first few lines of the file. 
+
 ```{r, echo=TRUE, eval=TRUE}
 differential_expression <- read.table('DifferentialExpression.tab', header=T)
 head(differential_expression, 3)
 ```
 
 ## Question 2: As part of a single plot, produce two MA-plots (one for each knockdown).
+
 ```{r, echo=T, eval=TRUE}
 library(ggplot2)
 library(GGally)
@@ -367,9 +391,11 @@ ma_plots
 
 
 ## Question 3: Explain how an MA-plot can be used to investigate whether expression data has been properly normalized (max 75 words). 
+
 The MA plot shows the relationship between the expression change (M) and average expression strength (A); genes with p-values after multiple testing correction are marked in red. The red line is the intercept with the 0 value on the y axis whereas the blue line is the mean across samples. In both cases the mean line is almost on the intercept meanin tha the data has been properly normalized.
 
 ## Question 4: Report the number of upregulated and downregulated genes that are significantly DE after correction for multiple testing (at alpha=0.05). Which knockdown target has the highest total number of DE genes? 
+
 ```{r, echo=TRUE, eval=TRUE}
 de_genes_a <- differential_expression[which(differential_expression$A.FDR<0.05),]
 down_reg_a <- nrow(de_genes_a[de_genes_a$A.logFC<0,])
@@ -383,9 +409,11 @@ down_reg_b
 up_reg_b <- nrow(de_genes_b[de_genes_b$B.logFC>0,])
 up_reg_b
 ```
+
 For GeneA the number of downregulated genes is 374 and the number of upregulated genes is 380. For GeneB the number of downregulated genes is 645 and the number of upregulated genes is 659, this is the target with the highest number of DE genes: 1304 genes.  
 
 ## Question 5: Plot the two sets of logFCs  (log2 fold changes) against each other. Color points based on whether they are significantly DE after multiple testing correction (at alpha=0.05) in either one or both of the knockdowns.
+
 ```{r, echo=TRUE, eval=TRUE}
 log_plot <- ggplot(data = differential_expression) + 
   geom_point(aes(B.logFC, A.logFC, colour = (A.FDR<0.05 | B.FDR<0.05)), 
@@ -398,23 +426,28 @@ log_plot
 
 
 ## Question 6: Calculate the Pearson correlation between the logFCs of the two knockdowns, and test whether this correlation is significant.
+
 ```{r, echo=TRUE, eval=TRUE}
 p_correlation <- cor(differential_expression$A.logFC, differential_expression$B.logFC, 
                      method="pearson")
 p_correlation
 ```
+
 The correlation coefficient is 0.1829156 denoting a very weak positive correlation between the two knockdowns.
 
 ## Question 7: Caroline asks you to construct a 2-by-2 contingency table showing whether genes are significantly DE (after correcting for multiple testing, alpha=0.05) in the two knockdowns. Perform a Fisher???s Exact test for any association between the DE genes in the two knockdowns.
+
 The Fisher's Exact test is used to check whether the differental expression is different between the two knockdown. The hypoteses for Fisher test are:
 H0: The two knockdowns are not significantly differently differentially-expressed - their differential expression is equal 
 H1: The two knockdowns are significantly differently differentially-expressed - their differential expression is not equal
+
 ```{r, echo=TRUE, eval=TRUE}
 de_table <- table(differential_expression$A.FDR<0.05, differential_expression$B.FDR<0.05)
 fisher.test(de_table)
 ```
 
 ## Question 8: Based on Question 4-7, do you think the geneA and geneB transcription factors regulate the same genes? Use a maximum of 100 words.
+
 From question 4, GeneB target results in a higher number of DE genes, almost double than GeneA knockdown. 
 From the logFC plot when GeneA targets have values around zero the GeneB targets have negative values meaning that they are downregulated. This is mirrored for GeneB targets with values around zero having positive values in GeneA condition, thus being upregulated. The Pearson coefficient show a weak correlation explained by the large aount of genes analysed. The Fisher test's resulting p-value is equal to 2.116e-11, which is below our significance threshold of 0.05, therefore we can reject the null hypothesis. These results confirm that GeneA and GeneB regulate different genes expression. 
 
